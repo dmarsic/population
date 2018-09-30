@@ -1,51 +1,52 @@
 package com.dmarsic;
 
+import java.util.List;
 import java.util.Random;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class Population {
 
-    int[][] population;
+    Individual[] population;
     int[] weights;
-    float[] fitness;
+    double[] fitness;
     int bestChromosomeIdx = -1;
-    int noOfTraits = 4;
-    int maxTraitValue = 20;
     double mutationThreshold = 0.000;
 
+    private final static Logger LOGGER = Logger.getLogger(Population.class.getName());
+
+    /**
+     * Creates population of individuals (Chromosomes).
+     *
+     * @param populationSize Number of individuals in the population
+     */
     public Population(int populationSize) {
-        population = new int[populationSize][noOfTraits];
+        population = new Individual[populationSize];
+        int mapSizeX = 80;
+        int mapSizeY = 80;
 
-        for (int c = 0; c < populationSize; c++) {
-            int[] chromosome = new int[noOfTraits];
-
-            for (int g = 0; g < noOfTraits; g++) {
-                int gene = new Random().nextInt(maxTraitValue) + 1;
-                    chromosome[g] = gene;
-            }
-
-            population[c] = chromosome;
+        for (int i = 0; i < populationSize; i++) {
+            Location location = new Location(
+                    new Random().nextInt(mapSizeX),
+                    new Random().nextInt(mapSizeY));
+            Individual chromosome = new Individual(location);
+            population[i] = chromosome;
         }
-
-        //printPopulation(population);
     }
 
-    public String repr(int[] chromosome) {
-        String representation = "";
-        for (int g = 0; g < noOfTraits; g++) {
-            representation += String.format("%02d ", chromosome[g]);
-        }
-        return String.format("|[%s]|", representation);
+    public String toString() {
+        return String.join("\n", population.toString());
     }
 
     public int getBestChromosomeIdx() {
         return bestChromosomeIdx;
     }
 
-    public int[][] getPopulation() {
+    public Individual[] getPopulation() {
         return population;
     }
 
-    public float[] getFitness() {
+    public double[] getFitness() {
         return fitness;
     }
 
@@ -57,44 +58,69 @@ public class Population {
         return weights;
     }
 
-    private void printPopulation(int[][] population) {
-        for (int c = 0; c < population.length; c++) {
-            System.out.println(String.format("[%02d] %s", c, repr(population[c])));
+    private void printPopulation(Individual[] population) {
+        for (Individual individual : population) {
+            System.out.println(String.format("%s", individual.toString()));
         }
     }
 
-    public float[] fitness(int[] preyChromosome, int[] preyWeights) {
+    public double[] fitness(Population prey) {
 
+        /*
 
-        fitness = new float[population.length];
-        float bestFitnessValue = 0;
+        Needs to be able to catch adjacent prey.
+
+         */
+
+        fitness = new double[population.length];
+        double bestFitnessValue = 0;
 
         for (int c = 0; c < population.length; c++) {
-            int[] chromosome = population[c];
+            Individual individual = population[c];
 
             int fit = 0;
-            for (int i = 0; i < chromosome.length; i++) {
-                fit += weights[i] * chromosome[i] - preyWeights[i] * preyChromosome[i];
+
+            List<Individual> preyWithinReach = individual.findPreyWithinReach(prey);
+            for (Individual i : preyWithinReach) {
+                LOGGER.log(Level.FINE, String.format("I: {}", i.location.toString()));
             }
 
-            fitness[c] = (float) fit;
+            // Simple fitness - how many reachable prey individuals we can outrun
+            if (weights[2] <= 1) {
+                fit = fitnessCanOutrun(individual, preyWithinReach);
+                LOGGER.fine(String.format("Fitness: %s", fit));
+            }
+
+            fitness[c] = (double) fit;
             if (fitness[c] > bestFitnessValue) {
                 bestFitnessValue = fitness[c];
                 bestChromosomeIdx = c;
             }
             //System.out.println(String.format("[%2d] %s, %.2f, %3d, %3d",
-            //        c, repr(chromosome), fitness[c], canCatchFood, canBeCaught));
+            //        c, toString(chromosome), fitness[c], canCatchFood, canBeCaught));
         }
 
         return fitness;
     }
 
-    int rouletteSelect(float[] fitness) {
+    private int fitnessCanOutrun(Individual individual, List<Individual> preyWithinReach) {
+        int countCanOutrun = 0;
+        int speed = individual.chromosome[1];
+        for (Individual preyIndividual : preyWithinReach) {
+            int preySpeed = preyIndividual.getChromosome()[1];
+            if (speed > preySpeed) {
+                countCanOutrun++;
+            }
+        }
+        return countCanOutrun;
+    }
+
+    private int rouletteSelect(double[] fitness) {
         // Taken directly from:
         // https://en.wikipedia.org/wiki/Fitness_proportionate_selection
 
         // find minimum fitness
-        float minimumFitness = fitness[0];
+        double minimumFitness = fitness[0];
         for (int i = 1; i < fitness.length; i++) {
             if (fitness[i] < minimumFitness) {
                 minimumFitness = fitness[i];
@@ -128,47 +154,61 @@ public class Population {
     }
 
     public int[][] selection() {
-        int[][] parents = new int[population.length][2];
+        int[][] parentIndexes = new int[population.length][2];
 
         for (int i = 0; i < population.length; i++) {
 
             // Note: This world allows cloning, i.e. parent a is parent b
-            parents[i][0] = rouletteSelect(fitness);
-            parents[i][1] = rouletteSelect(fitness);
+            parentIndexes[i][0] = rouletteSelect(fitness);
+            parentIndexes[i][1] = rouletteSelect(fitness);
         }
 
-        return parents;
+        return parentIndexes;
     }
 
-    public int[][] crossover(int[][] parents) {
-        int [][] newPopulation = new int[population.length][noOfTraits];
-        int crossoverPoint = noOfTraits / 2;
+    public Individual[] crossover(int[][] parentIndexes) {
+        Individual[] newPopulation = new Individual[population.length];
 
-        for (int i = 0; i < parents.length; i++) {
-            int[] newChromosome = new int[noOfTraits];
-            for (int g = 0; g < noOfTraits; g++) {
-                int parentAIdx = parents[i][0];
-                int parentBIdx = parents[i][1];
+        for (int i = 0; i < parentIndexes.length; i++) {
+            int parentAIdx = parentIndexes[i][0];
+            int parentBIdx = parentIndexes[i][1];
+            Individual parentA = population[parentAIdx];
+            Individual parentB = population[parentBIdx];
+            Location childLocation = determineChildLocation(parentA.getLocation(), parentB.getLocation());
+            int noOfGenes = parentA.getNoOfGenes();
+            int crossoverPoint = (int)(noOfGenes / 2);
+            int[] parentAChromosome = parentA.getChromosome();
+            int[] parentBChromosome = parentB.getChromosome();
+            int[] childChromosome = new int[noOfGenes];
+            for (int g = 0; g < noOfGenes; g++) {
                 if (g < crossoverPoint) {
-                    newChromosome[g] = population[parentAIdx][g];
+                    childChromosome[g] = parentAChromosome[g];
                 } else {
-                    newChromosome[g] = population[parentBIdx][g];
+                    childChromosome[g] = parentBChromosome[g];
                 }
             }
-            newPopulation[i] = newChromosome;
+            newPopulation[i] = new Individual(childChromosome, childLocation);
         }
 
         return newPopulation;
     }
 
-    public int[][] mutation(int[][] population) {
-        for (int i = 0; i < population.length; i++) {
-            for (int g = 0; g < noOfTraits; g++) {
+    public Location determineChildLocation(Location locationA, Location locationB) {
+        return new Location(
+                (int)((locationA.getX() + locationB.getX()) / 2),
+                (int)((locationA.getY() + locationB.getY()) / 2));
+    }
+
+    public Individual[] mutation(Individual[] population) {
+        for (Individual individual : population) {
+            int[] mutatedChromosome = individual.getChromosome();
+            for (int g = 0; g < individual.getNoOfGenes(); g++) {
                 double mutate = new Random().nextDouble();
                 if (mutate > mutationThreshold) {
-                    population[i][g] = new Random().nextInt(maxTraitValue) + 1;
+                    mutatedChromosome[g] = new Random().nextInt(individual.getMaxGeneValue()) + 1;
                 }
             }
+            individual.setChromosome(mutatedChromosome);
         }
 
         return population;

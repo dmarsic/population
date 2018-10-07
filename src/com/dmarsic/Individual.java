@@ -6,6 +6,8 @@ import java.util.Random;
 
 public class Individual {
 
+    String name;
+
     int noOfGenes = 4;
     int maxGeneValue = 20;
 
@@ -14,7 +16,8 @@ public class Individual {
     int[] chromosome = new int[noOfGenes];
     Location location;
 
-    public Individual(Location location) {
+    public Individual(String name, Location location) {
+        this.name = name;
         this.location = location;
         for (int i = 0; i < noOfGenes; i++) {
             chromosome[i] = new Random().nextInt(maxGeneValue) + 1;

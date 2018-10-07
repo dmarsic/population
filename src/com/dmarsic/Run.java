@@ -1,5 +1,6 @@
 package com.dmarsic;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 public class Run {
@@ -17,13 +18,13 @@ public class Run {
             int[][] parentIndexes = hunter.selection();
 
             // Create new population by crossover
-            Individual[] newPopulation = hunter.crossover(parentIndexes);
+            List<Individual> newPopulation = hunter.crossover(parentIndexes);
             hunter.mutation(newPopulation);
             hunter.population = newPopulation;
 
             int bestChromosomeIdx = hunter.getBestChromosomeIdx();
             System.out.println(String.format("BEST OFFSPRING IN %3d: [%d] %s (%.2f)",
-                    i, bestChromosomeIdx, hunter.getPopulation()[bestChromosomeIdx].toString(),
+                    i, bestChromosomeIdx, hunter.getPopulation().get(bestChromosomeIdx).toString(),
                     hunter.getFitness()[bestChromosomeIdx]));
         }
     }

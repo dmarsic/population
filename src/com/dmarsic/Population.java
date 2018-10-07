@@ -1,5 +1,6 @@
 package com.dmarsic;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -7,7 +8,7 @@ import java.util.logging.Level;
 
 public class Population {
 
-    Individual[] population;
+    List<Individual> population = new ArrayList<>();
     int[] weights;
     double[] fitness;
     int bestChromosomeIdx = -1;
@@ -21,7 +22,6 @@ public class Population {
      * @param populationSize Number of individuals in the population
      */
     public Population(int populationSize) {
-        population = new Individual[populationSize];
         int mapSizeX = 80;
         int mapSizeY = 80;
 
@@ -29,8 +29,8 @@ public class Population {
             Location location = new Location(
                     new Random().nextInt(mapSizeX),
                     new Random().nextInt(mapSizeY));
-            Individual chromosome = new Individual(location);
-            population[i] = chromosome;
+            Individual chromosome = new Individual(String.valueOf(i), location);
+            population.add(chromosome);
         }
     }
 
@@ -42,7 +42,7 @@ public class Population {
         return bestChromosomeIdx;
     }
 
-    public Individual[] getPopulation() {
+    public List<Individual> getPopulation() {
         return population;
     }
 
@@ -72,11 +72,11 @@ public class Population {
 
          */
 
-        fitness = new double[population.length];
+        fitness = new double[population.size()];
         double bestFitnessValue = 0;
 
-        for (int c = 0; c < population.length; c++) {
-            Individual individual = population[c];
+        for (int c = 0; c < population.size(); c++) {
+            Individual individual = population.get(c);
 
             int fit = 0;
 
@@ -154,9 +154,9 @@ public class Population {
     }
 
     public int[][] selection() {
-        int[][] parentIndexes = new int[population.length][2];
+        int[][] parentIndexes = new int[population.size()][2];
 
-        for (int i = 0; i < population.length; i++) {
+        for (int i = 0; i < population.size(); i++) {
 
             // Note: This world allows cloning, i.e. parent a is parent b
             parentIndexes[i][0] = rouletteSelect(fitness);
@@ -166,14 +166,14 @@ public class Population {
         return parentIndexes;
     }
 
-    public Individual[] crossover(int[][] parentIndexes) {
-        Individual[] newPopulation = new Individual[population.length];
+    public List<Individual> crossover(int[][] parentIndexes) {
+        List<Individual> newPopulation = new ArrayList<>();
 
         for (int i = 0; i < parentIndexes.length; i++) {
             int parentAIdx = parentIndexes[i][0];
             int parentBIdx = parentIndexes[i][1];
-            Individual parentA = population[parentAIdx];
-            Individual parentB = population[parentBIdx];
+            Individual parentA = population.get(parentAIdx);
+            Individual parentB = population.get(parentBIdx);
             Location childLocation = determineChildLocation(parentA.getLocation(), parentB.getLocation());
             int noOfGenes = parentA.getNoOfGenes();
             int crossoverPoint = (int)(noOfGenes / 2);
@@ -187,7 +187,7 @@ public class Population {
                     childChromosome[g] = parentBChromosome[g];
                 }
             }
-            newPopulation[i] = new Individual(childChromosome, childLocation);
+            newPopulation.add(new Individual(childChromosome, childLocation));
         }
 
         return newPopulation;
@@ -199,7 +199,7 @@ public class Population {
                 (int)((locationA.getY() + locationB.getY()) / 2));
     }
 
-    public Individual[] mutation(Individual[] population) {
+    public List<Individual> mutation(List<Individual> population) {
         for (Individual individual : population) {
             int[] mutatedChromosome = individual.getChromosome();
             for (int g = 0; g < individual.getNoOfGenes(); g++) {

@@ -1,4 +1,4 @@
-package com.dmarsic;
+package com.dmarsic.population;
 
 import static java.lang.Math.sqrt;
 import static java.lang.Math.pow;

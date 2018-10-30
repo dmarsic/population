@@ -1,4 +1,4 @@
-package com.dmarsic;
+package com.dmarsic.population;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +13,7 @@ public class Population {
     double[] fitness;
     int bestChromosomeIdx = -1;
     double mutationThreshold = 0.000;
+    Sprite sprite;
 
     private final static Logger LOGGER = Logger.getLogger(Population.class.getName());
 
@@ -21,29 +22,23 @@ public class Population {
      *
      * @param populationSize Number of individuals in the population
      */
-    public Population(int populationSize) {
-        int mapSizeX = 80;
-        int mapSizeY = 80;
-
-        for (int i = 0; i < populationSize; i++) {
-            Location location = new Location(
-                    new Random().nextInt(mapSizeX),
-                    new Random().nextInt(mapSizeY));
-            Individual chromosome = new Individual(String.valueOf(i), location);
-            population.add(chromosome);
-        }
+    public Population() {
     }
 
     public String toString() {
         return String.join("\n", population.toString());
     }
 
-    public int getBestChromosomeIdx() {
-        return bestChromosomeIdx;
-    }
-
     public List<Individual> getPopulation() {
         return population;
+    }
+
+    public void addIndividual(Individual chromosome) {
+        population.add(chromosome);
+    }
+
+    public int getBestChromosomeIdx() {
+        return bestChromosomeIdx;
     }
 
     public double[] getFitness() {
@@ -54,14 +49,12 @@ public class Population {
         this.weights = weights;
     }
 
-    public int[] getWeights() {
-        return weights;
+    public Sprite getSprite() {
+        return sprite;
     }
 
-    private void printPopulation(Individual[] population) {
-        for (Individual individual : population) {
-            System.out.println(String.format("%s", individual.toString()));
-        }
+    public void setSprite(Sprite sprite) {
+        this.sprite = sprite;
     }
 
     public double[] fitness(Population prey) {
@@ -82,13 +75,13 @@ public class Population {
 
             List<Individual> preyWithinReach = individual.findPreyWithinReach(prey);
             for (Individual i : preyWithinReach) {
-                LOGGER.log(Level.FINE, String.format("I: {}", i.location.toString()));
+                LOGGER.log(Level.FINE, String.format("I: {}", i.getLocation().toString()));
             }
 
             // Simple fitness - how many reachable prey individuals we can outrun
             if (weights[2] <= 1) {
                 fit = fitnessCanOutrun(individual, preyWithinReach);
-                LOGGER.fine(String.format("Fitness: %s", fit));
+                LOGGER.info(String.format("OutrunFitness: %s", fit));
             }
 
             fitness[c] = (double) fit;
@@ -213,7 +206,4 @@ public class Population {
 
         return population;
     }
-
-
-
 }

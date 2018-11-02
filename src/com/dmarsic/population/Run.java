@@ -14,7 +14,9 @@ public class Run {
 
         int worldSizeX = 80;
         int worldSizeY = 80;
+        int numberOfGenerations = 20;
 
         World world = new World(worldSizeX, worldSizeY);
+        world.runGenerations(numberOfGenerations);
     }
 }

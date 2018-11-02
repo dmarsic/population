@@ -13,6 +13,10 @@ public class Location {
         this.y = y;
     }
 
+    public String toString() {
+        return String.format("%d,%d", x, y);
+    }
+
     public int getX() {
         return x;
     }

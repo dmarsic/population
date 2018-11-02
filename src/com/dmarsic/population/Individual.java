@@ -14,7 +14,7 @@ public class Individual extends Physical {
     int noOfGenes = 4;
     int maxGeneValue = 20;
 
-    double reachFactor = 0.5;
+    double reachFactor = 1;
 
     int[] chromosome = new int[noOfGenes];
     List<Individual> reachablePrey = new ArrayList<>();
@@ -55,7 +55,8 @@ public class Individual extends Physical {
     }
 
     public String toString() {
-        return Arrays.stream(chromosome).mapToObj(String::valueOf).collect(Collectors.joining("|"));
+        String c = Arrays.stream(chromosome).mapToObj(String::valueOf).collect(Collectors.joining("|"));
+        return String.format("%s@%d,%d [%s]", name, super.getLocation().getX(), super.getLocation().getY(), c);
     }
 
     public List<Individual> findPreyWithinReach(Population prey) {

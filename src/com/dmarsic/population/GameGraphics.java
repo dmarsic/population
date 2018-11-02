@@ -17,15 +17,18 @@ public class GameGraphics extends Canvas {
     int screenWidth;
     int screenHeight;
     int statusBarHeight = 20;
+    int blocksX;
+    int blocksY;
     int blockSize = 8;
-    int flipSleepTime = 500;  // ms
-
     int fontSizeStandard = 10;
 
     BufferStrategy strategy;
     Graphics2D context;
 
     public GameGraphics(int blocksX, int blocksY) {
+
+        this.blocksX = blocksX;
+        this.blocksY = blocksY;
 
         // Determine the size of the screen based on the world size
         screenWidth = blocksX * blockSize;
@@ -94,6 +97,20 @@ public class GameGraphics extends Canvas {
     public void flip() {
         context.dispose();
         strategy.show();
+    }
+
+    public void drawGrid() {
+        int padding = 1;
+        for (int i = 0; i < blocksX; i++) {
+            for (int j = 0; j < blocksY; j++) {
+                context.setColor(Color.decode("#080808"));
+                context.drawRect(
+                        i * blockSize + padding,
+                        j * blockSize + padding,
+                        blockSize - 2 * padding,
+                        blockSize - 2 * padding);
+            }
+        }
     }
 
     public void putText(int x, int y, String text) {
